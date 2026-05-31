@@ -3,13 +3,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CidadeAtivaApi.Data
 {
-    public class AppDB(DbContextOptions<AppDB> options) : DbContext(options) // DbContext vem do ASP.NET - O AppDB é o banco local
+    public class AppDB(DbContextOptions<AppDB> options) : DbContext(options)
     {
-        // Essa classe conecta o código ao banco de dados (nesse caso ainda está sem SQL Server)
-        // Nessa versão está usando "inMemory"
-
-        // Usando o Framework Entity
-        // Permite trabalhar os dados relacionais usando classes e objetos em vez de escrever SQL
         public DbSet<ProblamasUrbano> Problamas => Set<ProblamasUrbano>();
+        public DbSet<User> Users => Set<User>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // E-mail único por usuário
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            // Um usuário pode ter vários chamados
+            modelBuilder.Entity<ProblamasUrbano>()
+                .HasOne(p => p.User)
+                .WithMany(u => u.Problemas)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        }
     }
 }

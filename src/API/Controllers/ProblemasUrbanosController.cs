@@ -1,77 +1,86 @@
+using System.Security.Claims;
 using CidadeAtivaApi.DTOs;
 using CidadeAtivaApi.Models.Enum;
 using CidadeAtivaApi.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 
 namespace CidadeAtivaApi.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")] 
+    [Route("api/[controller]")]
+    [Authorize]
     public class ProblemasUrbanosController : ControllerBase
-    {   
-        private readonly ProblemasService _service; // readonly defini o valor uma única vez 
+    {
+        private readonly ProblemasService _service;
         public ProblemasUrbanosController(ProblemasService service) => _service = service;
+
+        // Extrai o ID do usuário autenticado do token JWT
+        private int GetUserId() =>
+            int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+        private bool IsAdmin() =>
+            User.IsInRole("Admin");
 
 
         [HttpGet]
-        public async Task<IActionResult> GetAll( // Task<IActionResult>: - retorna uma resposta HTTP
-            [FromQuery] TipoProblema? tipo, 
-            [FromQuery] StatusProblema? status) 
+        public async Task<IActionResult> GetAll(
+            [FromQuery] TipoProblema? tipo,
+            [FromQuery] StatusProblema? status)
         {
-            var lista = await _service.GetAllAsync(tipo, status);
-            return Ok(lista);     
+            var lista = await _service.GetAllAsync(tipo, status, GetUserId(), IsAdmin());
+            return Ok(lista);
         }
+
 
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetById(Guid id)
         {
-            var problema = await _service.GetByIdAsync(id);
-            if(problema is null)
-            {
+            var problema = await _service.GetByIdAsync(id, GetUserId(), IsAdmin());
+            if (problema is null)
                 return NotFound(new { mensagem = $"ID {id} não encontrado" });
-            }
+
             return Ok(problema);
         }
+
 
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CriarProblema dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState); 
+                return BadRequest(ModelState);
 
-
-            var criado = await _service.CreateAsync(dto);
-            return CreatedAtAction(
-                nameof(GetById),
-                new { id = criado.Id },
-                criado); 
+            var criado = await _service.CreateAsync(dto, GetUserId());
+            return CreatedAtAction(nameof(GetById), new { id = criado.Id }, criado);
         }
 
 
+        // Apenas Admin pode alterar dados e status de chamados
         [HttpPut("{id:guid}")]
-        public async Task<IActionResult> Update(
-            Guid id, [FromBody] AtualizarProblema dto)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update(Guid id, [FromBody] AtualizarProblema dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);  
+                return BadRequest(ModelState);
 
             var atualizado = await _service.UpdateAsync(id, dto);
             if (atualizado is null)
-                return NotFound(new { mensagem = $"Problema {id} nao encontrado" });
-            return Ok(atualizado); 
+                return NotFound(new { mensagem = $"Problema {id} não encontrado" });
+
+            return Ok(atualizado);
         }
 
 
+        // Apenas Admin pode remover chamados
         [HttpDelete("{id:guid}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(Guid id)
         {
             var removido = await _service.DeleteAsync(id);
             if (!removido)
-                return NotFound(new { mensagem = $"Problema {id} nao encontrado" });
-            return NoContent(); 
-        }
+                return NotFound(new { mensagem = $"Problema {id} não encontrado" });
 
-        
+            return NoContent();
+        }
     }
 }

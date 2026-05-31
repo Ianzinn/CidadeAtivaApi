@@ -18,6 +18,6 @@ namespace CidadeAtivaApi.DTOs
         public string? Bairro { get; set; } 
         public DateTime CriadoEm { get; set; }
         public DateTime? AtualizadoEm { get; set; }
-
+        public int? UserId { get; set; }
     }
 }
