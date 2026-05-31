@@ -335,3 +335,17 @@ curl -s -X PATCH http://localhost:5164/api/admin/chamados/<id>/status \
 curl -s -X PATCH http://localhost:5164/api/admin/chamados/<id>/finalizar \
   -H "Authorization: Bearer $TOKEN"
 ```
+
+---
+
+## Equipe
+
+Projeto desenvolvido por alunos do curso de Análise e Desenvolvimento de Sistemas.
+
+| Nome | RA |
+|---|---|
+| Danilo Martins de Oliveira | 324113193 |
+| Melquisedeque Florencio Campos | 324118771 |
+| Pedro Lucas Dias Amorim de Deus | 324122649 |
+| Gabriel Lucas Lima Ângelo | 324118333 |
+| Ian Pedro Barbosa de Santana | 324153108 |
